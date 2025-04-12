@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IMAGE_NAME=scratch-web-app
+IMAGE_NAME=view-regulations
 
 echo "Building new Docker image (if repo changed, is it pushed and CACHEBUST updated?)..."
 echo
