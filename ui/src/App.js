@@ -27,7 +27,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <h1>Scratch Web App - Animals</h1>
+        <h1>Web App - Regulations</h1>
         <div className="Animals">
           {animals.map((item, index) =>
             <Card key={index} animal={item} />
