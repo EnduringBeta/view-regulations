@@ -10,7 +10,7 @@ ENV MYSQL_DATABASE=mydatabase
 ENV MYSQL_USER=myuser
 ENV MYSQL_PASSWORD=insecure
 
-ENV REPO_DIR=scratch-web-app
+ENV REPO_DIR=view-regulations
 
 ENV FLASK_APP=$REPO_DIR/api/app.py
 ENV FLASK_ENV=development
@@ -30,10 +30,10 @@ WORKDIR /app
 #ARG CACHEBUST=1
 
 # Get repo
-RUN git clone https://github.com/EnduringBeta/scratch-web-app.git
+RUN git clone git@github.com:EnduringBeta/view-regulations.git
 
 # Use Python virtual environment to install and use project dependencies
-RUN python3 -m venv venv && \
+RUN python3 -m venv myenv && \
     . venv/bin/activate && \
     pip3 install -r $REPO_DIR/api/requirements.txt
 
