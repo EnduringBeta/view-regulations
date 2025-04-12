@@ -21,13 +21,13 @@ This app may ignore a containerized solution for speedier development and possib
 
 ## Containerized Setup
 
-0. Clone this repository first: `git clone git@github.com:EnduringBeta/scratch-web-app.git`
+0. Clone this repository first: `git clone git@github.com:EnduringBeta/view-regulations.git`
 
 ### Run Docker container
 
 1. Download [Docker Desktop](https://www.docker.com/) and install. Probably sign in. (This program is useful, but following steps will only use the command line functionality.)
-2. Inside the repo directory from step 0, run `docker build -t scratch-web-app .` to build the Docker image
-3. Run `docker run -d -p 3306:3306 -p 5000:5000 -p 3000:3000 scratch-web-app` to start the MySQL and Flask server
+2. Inside the repo directory from step 0, run `docker build -t view-regulations .` to build the Docker image
+3. Run `docker run -d -p 3306:3306 -p 5000:5000 -p 3000:3000 view-regulations` to start the MySQL and Flask server
 
 These can also be run together via `redocker.sh`
 
@@ -42,7 +42,12 @@ These can also be run together via `redocker.sh`
 
 ## Local Setup
 
-Clone the repo, create Python virtual environment, install Python requirements, install MySQL, and run `./run-app.sh`, which starts the server API (`python3 app.py` and `flask run` also work).
+* Clone the repo
+* Create and use Python virtual environment (`python3 -m venv myenv`, `. myenv/bin/activate`)
+* Install Python requirements (`pip3 install -r api/requirements.txt`)
+* Install Node requirements (`cd ui/ && npm install`)
+* Install MySQL (`brew install mysql`)
+* Run `./run-app.sh`, which starts the server API (`python3 app.py` and `flask run` also work).
 
 Environment variables may break things; running locally is untested.
 
