@@ -1,8 +1,23 @@
-# scratch-web-app
+# view-regulations
 
 Example building container with database, data retrieved by API, and UI to view
 
 This uses Docker with Linux, MySQL, Python, and React with JS
+
+## View Regulations
+
+This branch from the original `scratch-web-app` is to accomplish this:
+
+* Pull data from eCFR API
+    * https://www.ecfr.gov/developers/documentation/api/v1
+* Store data in database
+* Process data to show agency regulation count
+* Develop UI to show data
+* Deploy to public server
+* Define potential unique insights
+* Implement insights
+
+This app may ignore a containerized solution for speedier development and possibly deployment.
 
 ## Containerized Setup
 
