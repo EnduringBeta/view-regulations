@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import requests
+import hashlib
 import mysql.connector
 import xml.etree.ElementTree as ET
 from flask import Flask, request, jsonify
@@ -181,7 +182,17 @@ def _get_regulation_xml(reg_finder, date):
     
     return regulation_xml
 
-# TODOROSS: add checksum
+def calculate_checksum(text):
+    if not isinstance(text, str):
+        raise ValueError("Input must be a string")
+
+    # Encode the text to bytes
+    text_bytes = text.encode('utf-8')
+
+    checksum = hashlib.md5(text_bytes).hexdigest()
+
+    return checksum
+
 def _count_regulation_words(regulation_xml):
     # Count words in the regulation text withing HEAD and P tags
     word_count = 0
@@ -192,11 +203,14 @@ def _count_regulation_words(regulation_xml):
                 # Handle <I> internal tags, etc.
                 full_text = ''.join(e.itertext())
                 word_count += len(full_text.split())
+        
+        # Checksum is based on full XML, while word count removes non-text elements
+        checksum = calculate_checksum(ET.tostring(regulation_xml, encoding='unicode'))
     except Exception as e:
         logger.error(f"Error counting words in regulation text: {e}")
         raise e
 
-    return word_count
+    return word_count, checksum
 
 # Insert regulation data for agency's references into database and return regulations
 # TODO: check for duplicates
@@ -219,7 +233,7 @@ def _get_agency_regulations(conn, cursor, agency, agency_id, date):
         )
         regulation_xml = _get_regulation_xml(reg_finder, date)
         #regulation_text = ET.tostring(regulation_xml, encoding='unicode')
-        count = _count_regulation_words(regulation_xml)
+        count, checksum = _count_regulation_words(regulation_xml)
 
         regulations.append({
             'title': reg_finder.title,
@@ -229,14 +243,15 @@ def _get_agency_regulations(conn, cursor, agency, agency_id, date):
             'part': reg_finder.part,
             'subpart': reg_finder.subpart,
             'date': date,
-            'word_count': count
+            'word_count': count,
+            'checksum': checksum
         })
 
         # TODO: include text
         query_regulation = f"INSERT INTO {table_regulations} \
             (agency_id, title, subtitle, chapter, subchapter, \
-            part, subpart, date, word_count) \
-            VALUES ({'%s, %s, %s, %s, %s, %s, %s, %s, %s'})"
+            part, subpart, date, word_count, checksum) \
+            VALUES ({'%s, %s, %s, %s, %s, %s, %s, %s, %s, %s'})"
 
         regulation_data = (
             agency_id,
@@ -248,7 +263,8 @@ def _get_agency_regulations(conn, cursor, agency, agency_id, date):
             reg_finder.subpart,
             date,
             #regulation_text,
-            count
+            count,
+            checksum
         )
 
         try:
@@ -295,7 +311,8 @@ def _initialize_db(supply_init_data = False):
             part VARCHAR(255),
             subpart VARCHAR(255),
             date DATE NOT NULL,
-            word_count INT NOT NULL
+            word_count INT NOT NULL,
+            checksum VARCHAR(255) NOT NULL
         )"""
         cursor.execute(query_regulations)
 
@@ -356,6 +373,8 @@ def get_agency(agency_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# TODOROSS: this is sometimes called twice in rapid succession;
+# in development React will do this?
 @app.route("/agencies/<int:agency_id>/regulations/<int:year>", methods=["GET"])
 def get_agency_regulations(agency_id, year = None):
     currentYear = datetime.datetime.now().year
