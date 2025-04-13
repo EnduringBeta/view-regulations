@@ -74,7 +74,6 @@ function ChildAgencyCheckbox({ value, callback }) {
 }
 
 /// Accepts "?year=2022"
-/// TODOROSS: check child agencies
 function AgencyPage() {
   const { agencyId } = useParams();
   const [searchParams] = useSearchParams();

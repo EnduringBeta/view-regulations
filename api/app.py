@@ -392,8 +392,7 @@ def get_agency(agency_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# TODOROSS: this is sometimes called twice in rapid succession;
-# in development React will do this?
+# TODO: this may be called twice in rapid succession; in development React will do this?
 @app.route("/agencies/<int:agency_id>/regulations/<int:year>", methods=["GET"])
 def get_agency_regulations(agency_id, year = None):
     currentYear = datetime.datetime.now().year
