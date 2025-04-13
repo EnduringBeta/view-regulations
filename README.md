@@ -75,3 +75,4 @@ On Windows, run `mysqld` to start the database server and `mysqladmin -u root sh
 
 * Ideally MySQL, Flask, and React are in separate containers
 * Enable running locally more easily
+* TODOROSS: custom metric, graph, keyword search?
