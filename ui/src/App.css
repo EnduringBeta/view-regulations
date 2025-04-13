@@ -79,6 +79,10 @@
   padding: 2px 16px;
 }
 
+.Checksum {
+  font-size: 0.5rem;
+}
+
 .YearSelector {
   margin: 20px 0;
   text-align: center;
