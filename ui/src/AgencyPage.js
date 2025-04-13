@@ -25,6 +25,7 @@ function RegulationCard({ regulation }) {
         <h2>{referenceText}</h2>
         <h3>{formatWordCount(regulation.word_count)} words</h3>
         <p>As of {formatDate(regulation.date)}</p>
+        <p class="Checksum">{regulation.checksum}</p>
       </div>
     </div>
   );
@@ -62,7 +63,6 @@ function AgencyPage() {
   const initialYear = searchParams.get("year") || currentYear;
   const [year, setYear] = useState(initialYear);
 
-  //const [loading, setLoading] = useState(true);
   const [agency, setAgency] = useState([]);
   const [regulations, setRegulations] = useState([]);
 
@@ -75,18 +75,26 @@ function AgencyPage() {
     });
   }, [agencyId]);
 
+  /// TODO: resolve react-hooks/exhaustive-deps for regulations
   useEffect(() => {
-    setRegulations([]); // Reset regulations when year changes
+    if (!regulations) return; // Prevent duplicate fetches
+    setRegulations(null);
+
     fetch(`/agencies/${agencyId}/regulations/${year}`).then((res) => res.json()).then((data) => {
       if (Array.isArray(data)) {
         setRegulations(data);
       } else {
         // 404 error returns an object
-        setRegulations(null);
+        setRegulations([]);
       }
     })
     .catch((error) => {
       console.error("Error fetching regulations:", error);
+    })
+    .finally(() => {
+      if (!regulations) {
+        setRegulations([]);
+      }
     });
   }, [agencyId, year]);
 
@@ -100,14 +108,18 @@ function AgencyPage() {
   return (
     <div id={`agency-regulations-${agency.slug}`}>
       <h1>{agency.short_name}</h1>
-      <h2>Total words: {totalWordCount === -1 ? noDataText : totalWordCount === 0 ? loadingText : formatWordCount(totalWordCount)}</h2>
+      <h2>Total words: {totalWordCount === -1 ? loadingText : totalWordCount === 0 ? noDataText : formatWordCount(totalWordCount)}</h2>
       <YearSelector year={year} currentYear={currentYear} setYear={setYear}></YearSelector>
       <div className="Regulations">
-        {!regulations ? null : regulations.map((item, index) => {
-          return (
-            <RegulationCard key={index} regulation={item} />
-          );
-        })}
+        {!regulations ? (
+          <p>{loadingText}</p>
+        ) : regulations.length === 0 ? (
+          <p>{noDataText}</p>
+        ) : (
+          regulations.map((item, index) => {
+            return (<RegulationCard key={index} regulation={item} />);
+          })
+        )}
       </div>
     </div>
   );
@@ -133,7 +145,7 @@ function formatDate(date) {
 
   const d = new Date(date);
   const year = d.getFullYear();
-  const month = d.toLocaleString("default", { month: "long" });
+  const month = d.toLocaleString("default", { month: "short" });
   const day = d.getDate();
 
   return `${month} ${day}, ${year}`;
