@@ -26,7 +26,7 @@ mysql -u root -p$MYSQL_PASSWORD < init.sql
 # Run the API (in background with "&")!
 # Use host arg for all addresses
 flask --app api/app.py run &
-#flask --app api/app.py run --host=0.0.0.0 --port=5001 &
+#flask --app api/app.py run --host=0.0.0.0 --port=5000 &
 #python3 app.py
 
 echo "Pausing for any API messages..."
