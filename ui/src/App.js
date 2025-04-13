@@ -5,13 +5,14 @@ import React, { useState, useEffect } from "react";
 
 function Card({ agency, parentAgency }) {
   return (
-    <div id={`agency-${agency.id}`} className="Card">
+    <div id={`agency-${agency.slug}`} className="Card">
       <div className="Container">
         <h2>{agency.short_name}</h2>
         <p>{agency.name}</p>
         {parentAgency && (
         <h3>Within {parentAgency.short_name}</h3>
         )}
+        <p>{agency.cfr_references}</p>
       </div>
     </div>
   );
