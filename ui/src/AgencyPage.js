@@ -54,6 +54,25 @@ function YearSelector({ year, currentYear, setYear }) {
   );
 }
 
+function ChildAgencyCheckbox({ value, callback }) {
+  const handleCheckboxChange = (event) => {
+    callback(event.target.checked);
+  };
+
+  return (
+    <div className="ChildAgencyCheckbox">
+      <label>
+        <input
+          type="checkbox"
+          checked={value}
+          onChange={handleCheckboxChange}
+        />
+        Get child agency regulations
+      </label>
+    </div>
+  );
+}
+
 /// Accepts "?year=2022"
 /// TODOROSS: check child agencies
 function AgencyPage() {
@@ -62,6 +81,7 @@ function AgencyPage() {
   const currentYear = new Date().getFullYear();
   const initialYear = searchParams.get("year") || currentYear;
   const [year, setYear] = useState(initialYear);
+  const [getChildAgencyData, setGetChildAgencyData] = useState(false);
 
   const [agency, setAgency] = useState([]);
   const [regulations, setRegulations] = useState([]);
@@ -80,6 +100,8 @@ function AgencyPage() {
     if (!regulations) return; // Prevent duplicate fetches
     setRegulations(null);
 
+    // TODOROSS: use getChildAgencyData to append ?all=true
+
     fetch(`/agencies/${agencyId}/regulations/${year}`).then((res) => res.json()).then((data) => {
       if (Array.isArray(data)) {
         setRegulations(data);
@@ -96,7 +118,7 @@ function AgencyPage() {
         setRegulations([]);
       }
     });
-  }, [agencyId, year]);
+  }, [agencyId, year, getChildAgencyData]);
 
   // Calculate total word count
   const totalWordCount = !regulations ? -1 : regulations.length === 0
@@ -109,7 +131,10 @@ function AgencyPage() {
     <div id={`agency-regulations-${agency.slug}`}>
       <h1>{agency.short_name}</h1>
       <h2>Total words: {totalWordCount === -1 ? loadingText : totalWordCount === 0 ? noDataText : formatWordCount(totalWordCount)}</h2>
-      <YearSelector year={year} currentYear={currentYear} setYear={setYear}></YearSelector>
+      <span>
+        <YearSelector year={year} currentYear={currentYear} setYear={setYear}></YearSelector>
+        <ChildAgencyCheckbox value={getChildAgencyData} callback={setGetChildAgencyData}></ChildAgencyCheckbox>
+      </span>
       <div className="Regulations">
         {!regulations ? (
           <p>{loadingText}</p>
