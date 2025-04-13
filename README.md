@@ -33,11 +33,11 @@ These can also be run together via `redocker.sh`
 
 ### Test server
 
-4. Go to http://localhost:5000/animals
-5. Add an animal via: `curl -i http://127.0.0.1:5000/animals -X POST -H 'Content-Type: application/json' -d '{"name":"Wren", "type": "cat"}'`
-6. Update an animal via: `curl -i http://127.0.0.1:5000/animals -X PUT -H 'Content-Type: application/json' -d '{"id": 5, "name":"Sparrow", "type": "cat"}'`
-7. Get a single animal via: http://127.0.0.1:5000/animals/2
-8. Remove an animal via: `curl -i http://127.0.0.1:5000/animals/4 -X DELETE -H 'Content-Type: application/json'`
+4. Go to http://localhost:5000/agencies
+5. Add an agency via: `curl -i http://127.0.0.1:5000/agencies -X POST -H 'Content-Type: application/json' -d '{"name":"Wren", "type": "cat"}'`
+6. Update an agency via: `curl -i http://127.0.0.1:5000/agencies -X PUT -H 'Content-Type: application/json' -d '{"id": 5, "name":"Sparrow", "type": "cat"}'`
+7. Get a single agency via: http://127.0.0.1:5000/agencies/2
+8. Remove an agency via: `curl -i http://127.0.0.1:5000/agencies/4 -X DELETE -H 'Content-Type: application/json'`
 9. Go to http://localhost:3000
 
 ## Local Setup
@@ -57,6 +57,9 @@ On Windows, run `mysqld` to start the database server and `mysqladmin -u root sh
 
 * On Docker run, "Bind for 0.0.0.0:3306 failed: port is already allocated" - stop existing Docker container
 * "run-app.sh: Permission denied" - `git update-index --chmod=+x run-app.sh`
+
+* Flask's port 5000 is in use could mean Flask is already running. Use `lsof -i :5000` to find processes and
+  kill -9 <process#> to stop it.
 
 ## Tips
 
