@@ -7,7 +7,7 @@ const startYear = 2015;
 const loadingText = "Loading...";
 const noDataText = "No data";
 
-function RegulationCard({ regulation }) {
+function RegulationCard({ regulation, parentAgencyId }) {
   const referencePieces = [
     regulation.title,
     regulation.subtitle,
@@ -20,12 +20,14 @@ function RegulationCard({ regulation }) {
   const referenceSlug = referencePieces.join("-").toLowerCase();
 
   return (
-    <div id={`regulation-${referenceSlug}`} className="Card">
+    <div id={`regulation-${referenceSlug}`}
+      className={`Card ${regulation.agency_id === parentAgencyId ? "Parent" : "Child"}`}>
       <div className="Container">
         <h2>{referenceText}</h2>
         <h3>{formatWordCount(regulation.word_count)} words</h3>
         <p>As of {formatDate(regulation.date)}</p>
-        <p class="Checksum">{regulation.checksum}</p>
+        <p className="Checksum">{regulation.checksum}</p>
+        <p>{regulation.agency_id}</p>
       </div>
     </div>
   );
@@ -99,9 +101,10 @@ function AgencyPage() {
     if (!regulations) return; // Prevent duplicate fetches
     setRegulations(null);
 
-    // TODOROSS: use getChildAgencyData to append ?all=true
+    const allParam = getChildAgencyData ? "?all=true" : "";
+    const url = `/agencies/${agencyId}/regulations/${year}${allParam}`;
 
-    fetch(`/agencies/${agencyId}/regulations/${year}`).then((res) => res.json()).then((data) => {
+    fetch(url).then((res) => res.json()).then((data) => {
       if (Array.isArray(data)) {
         setRegulations(data);
       } else {
@@ -141,7 +144,7 @@ function AgencyPage() {
           <p>{noDataText}</p>
         ) : (
           regulations.map((item, index) => {
-            return (<RegulationCard key={index} regulation={item} />);
+            return (<RegulationCard key={index} regulation={item} parentAgencyId={agency.id} />);
           })
         )}
       </div>

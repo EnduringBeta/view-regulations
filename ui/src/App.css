@@ -117,3 +117,17 @@
 .ChildAgencyCheckbox {
   padding-left: 10px;
 }
+
+.ChildAgencyCheckbox label {
+  font-size: 1.2rem;
+  color: white;
+}
+
+.ChildAgencyCheckbox input {
+  margin-right: 10px;
+}
+
+.Regulations .Card.Child {
+  background-color: darkslateblue;
+  opacity: 0.9;
+}
