@@ -75,7 +75,8 @@ def _get_or_fetch_regulations(conn, cursor, agency_id, date_year):
     if not regulations:
         logger.info(f"Regulations for agency {agency_id} year {date_year} not found; getting from eCFR...")
         agency = _fetch_agency_by_id(cursor, agency_id)
-        date = datetime.datetime(date_year, 1, 19, 12, 0, 0, tzinfo=datetime.timezone.utc).strftime('%Y-%m-%d')
+        date = datetime.datetime(date_year, 1, 19, 12, 0, 0,
+                                 tzinfo=datetime.timezone.utc).strftime('%Y-%m-%d')
 
         regulations = _get_agency_regulations(conn, cursor, agency, agency_id, date)
     
@@ -232,7 +233,7 @@ def _count_regulation_words(regulation_xml):
     return word_count, checksum
 
 # Insert regulation data for agency's references into database and return regulations
-# TODO: check for duplicates
+# TODOROSS: check for duplicates; prevent double calls
 def _get_agency_regulations(conn, cursor, agency, agency_id, date):
     references = json.loads(agency.get('cfr_references', []))
     if not references:
@@ -255,6 +256,7 @@ def _get_agency_regulations(conn, cursor, agency, agency_id, date):
         count, checksum = _count_regulation_words(regulation_xml)
 
         regulations.append({
+            'agency_id': agency_id,
             'title': reg_finder.title,
             'subtitle': reg_finder.subtitle,
             'chapter': reg_finder.chapter,
@@ -412,7 +414,8 @@ def get_agency_regulations(agency_id, year = None):
         if fetch_child_agency_regs:
             child_agencies = _fetch_child_agencies(cursor, agency_id)
             for child_agency in child_agencies:
-                regulations.append(_get_or_fetch_regulations(conn, cursor, child_agency['id'], date_year))
+                regulations.extend(_get_or_fetch_regulations(
+                    conn, cursor, child_agency['id'], date_year))
 
         conn.close()
 
