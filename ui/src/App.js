@@ -3,12 +3,15 @@ import './App.css';
 
 import React, { useState, useEffect } from "react";
 
-function Card({ agency }) {
+function Card({ agency, parentAgency }) {
   return (
     <div id={`agency-${agency.id}`} className="Card">
       <div className="Container">
         <h2>{agency.short_name}</h2>
         <p>{agency.name}</p>
+        {parentAgency && (
+        <h3>Within {parentAgency.short_name}</h3>
+        )}
       </div>
     </div>
   );
@@ -29,9 +32,15 @@ function App() {
         <img src={logo} className="App-logo" alt="logo" />
         <h1>Web App - Regulations</h1>
         <div className="Agencies">
-          {agencies.map((item, index) =>
-            <Card key={index} agency={item} />
-          )}
+          {agencies.map((item, index) => {
+            const parentAgency = agencies.find(
+              (agency) => agency.id === item.parent_id
+            ) ?? null;
+
+            return (
+              <Card key={index} agency={item} parentAgency={parentAgency} />
+            );
+          })}
         </div>
       </header>
     </div>
