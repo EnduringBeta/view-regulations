@@ -181,6 +181,7 @@ def _get_regulation_xml(reg_finder, date):
     
     return regulation_xml
 
+# TODOROSS: add checksum
 def _count_regulation_words(regulation_xml):
     # Count words in the regulation text withing HEAD and P tags
     word_count = 0
@@ -355,19 +356,27 @@ def get_agency(agency_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/agencies/<int:agency_id>/regulations", methods=["GET"])
-def get_agency_regulations(agency_id):
+@app.route("/agencies/<int:agency_id>/regulations/<int:year>", methods=["GET"])
+def get_agency_regulations(agency_id, year = None):
+    currentYear = datetime.datetime.now().year
+    if year and year >= 2015 and year <= currentYear:
+        dateYear = year
+    else:
+        dateYear = currentYear
+    
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        query = f"SELECT * FROM {table_regulations} WHERE agency_id = %s"
-        cursor.execute(query, (agency_id,))
+        query = f"SELECT * FROM {table_regulations} WHERE agency_id = %s AND YEAR(date) = %s"
+        cursor.execute(query, (agency_id, dateYear))
         regulations = cursor.fetchall()
 
+        # TODOROSS: fix duplicate data glitch?
         if not regulations:
-            logger.info(f"Regulations for agency {agency_id} not found; getting from eCFR...")
+            logger.info(f"Regulations for agency {agency_id} year {dateYear} not found; getting from eCFR...")
             agency = _fetch_agency_by_id(cursor, agency_id)
-            date = datetime.datetime.now().strftime('%Y-01-01')
+            date = datetime.datetime(dateYear, 1, 19, 12, 0, 0, tzinfo=datetime.timezone.utc).strftime('%Y-%m-%d')
+
             regulations = _get_agency_regulations(conn, cursor, agency, agency_id, date)
 
         conn.close()
