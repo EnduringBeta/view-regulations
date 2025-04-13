@@ -25,7 +25,22 @@
 }
 
 .App-link {
-  color: #61dafb;
+  color: #ffffff; /* White text for better contrast */
+  text-decoration: none; /* Remove underline */
+  transition: color 0.3s ease; /* Smooth color transition */
+}
+
+.App-link:visited {
+  color: #d1d1d1; /* Light gray for visited links */
+}
+
+.App-link:hover {
+  color: #61dafb; /* Bright blue on hover */
+  text-decoration: underline; /* Add underline on hover for clarity */
+}
+
+.App-link:active {
+  color: #21a1f1; /* Slightly darker blue for active state */
 }
 
 @keyframes App-logo-spin {
@@ -62,4 +77,35 @@
 
 .Container {
   padding: 2px 16px;
+}
+
+.YearSelector {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.YearSelector label {
+  font-size: 1.2rem;
+  color: white;
+  margin-right: 10px;
+}
+
+.YearSelector select {
+  font-size: 1rem;
+  padding: 5px 10px;
+  border: 1px solid #61dafb;
+  border-radius: 5px;
+  background-color: #282c34;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.YearSelector select:hover {
+  border-color: #21a1f1;
+}
+
+.YearSelector select:focus {
+  outline: none;
+  box-shadow: 0 0 5px #61dafb;
 }
