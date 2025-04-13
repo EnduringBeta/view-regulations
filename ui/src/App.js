@@ -7,8 +7,8 @@ function Card({ agency }) {
   return (
     <div id={`agency-${agency.id}`} className="Card">
       <div className="Container">
-        <h2>{agency.name}</h2>
-        <h3>{agency.type}</h3>
+        <h2>{agency.short_name}</h2>
+        <p>{agency.name}</p>
       </div>
     </div>
   );
