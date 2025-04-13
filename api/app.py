@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
+logger = logging.getLogger(__name__)
 
 logging.basicConfig(filename='flask_app.log', level=logging.DEBUG)
 
@@ -55,6 +56,12 @@ def get_db_connection():
 def _clean_field(value):
     return value if value is not None else ''
 
+def _fetch_agency_by_id(cursor, agency_id):
+    query = f"SELECT * FROM {table_agencies} WHERE id = %s"
+    cursor.execute(query, (agency_id,))
+    return cursor.fetchone()
+
+# Insert agencies into database and return agencies and ID map
 # Feels a bit clunky to return a tuple when the data could be combined
 def _get_agencies(conn, cursor):
     # Get agency data
@@ -67,11 +74,11 @@ def _get_agencies(conn, cursor):
 
         agencies = data['agencies']
     except Exception as e:
-        print(f"Error getting initial agency data: {e}")
+        logger.error(f"Error getting initial agency data: {e}")
         raise e
 
     if not agencies:
-        print(f"Error getting initial agency data!")
+        logger.error(f"Error getting initial agency data!")
         conn.commit()
         conn.close()
         return
@@ -92,7 +99,7 @@ def _get_agencies(conn, cursor):
         )
         for agency in agencies
     ]
-    #print(agency_data)
+    #logger.info(agency_data)
 
     cursor.executemany(query_add_agencies, agency_data)
     conn.commit()
@@ -127,18 +134,19 @@ def _get_agencies(conn, cursor):
     cursor.executemany(query_add_child_agencies, child_agency_data)
     conn.commit()
 
-    print('Added initial agencies!')
+    logger.info('Added initial agencies!')
 
     agencies.append(child_agencies)
     return agencies, agency_id_map
 
+# Get regulation XML from eCFR
 # https://github.com/usgpo/bulk-data/blob/main/ECFR-XML-User-Guide.md
 def _get_regulation_xml(reg_finder, date):
     if reg_finder.subchapter and not reg_finder.chapter:
-        print(f"Cannot get regulation text with subchapter {reg_finder.subchapter} without chapter; ignoring...")
+        logger.warning(f"Cannot get regulation text with subchapter {reg_finder.subchapter} without chapter; ignoring...")
         return
     elif reg_finder.subpart and not reg_finder.part:
-        print(f"Cannot get regulation text of subpart {reg_finder.subpart} without part; ignoring...")
+        logger.warning(f"Cannot get regulation text of subpart {reg_finder.subpart} without part; ignoring...")
         return
 
     # Assemble URL
@@ -154,9 +162,9 @@ def _get_regulation_xml(reg_finder, date):
         if reg_finder.subpart:
             url += f"?subpart={reg_finder.subpart}"
 
-    print(f"Getting regulation text: {reg_finder.title} {reg_finder.subtitle} {reg_finder.chapter} {reg_finder.subchapter} {reg_finder.part} {reg_finder.subpart}")
+    #logger.info(f"Getting regulation text: {reg_finder.title} {reg_finder.subtitle} {reg_finder.chapter} {reg_finder.subchapter} {reg_finder.part} {reg_finder.subpart}")
 
-    # TODOROSS: error about size
+    # TODO: error about size
     regulation_xml = None
 
     try:
@@ -164,11 +172,11 @@ def _get_regulation_xml(reg_finder, date):
         response.raise_for_status()
         regulation_xml = ET.fromstring(response.content)
     except Exception as e:
-        print(f"Error getting regulation text: {e}")
+        logger.error(f"Error getting regulation text: {e}")
         raise e
 
     if regulation_xml is None:
-        print(f"Error getting regulation text!")
+        logger.error(f"Error getting regulation text!")
         return
     
     return regulation_xml
@@ -184,63 +192,72 @@ def _count_regulation_words(regulation_xml):
                 full_text = ''.join(e.itertext())
                 word_count += len(full_text.split())
     except Exception as e:
-        print(f"Error counting words in regulation text: {e}")
+        logger.error(f"Error counting words in regulation text: {e}")
         raise e
 
     return word_count
 
-# Get regulation text for each agency's title, chapter, and part
-# TODOROSS: check for duplicates
-def _get_regulations(conn, cursor, agencies, agency_id_map, date):
-    for agency in agencies:
-        references = agency.get('cfr_references', [])
-        if not references:
-            continue
-        for reference in references:
-            reg_finder = RegulationFinder(
-                reference.get('title'),
-                reference.get('subtitle'),
-                reference.get('chapter'),
-                reference.get('subchapter'),
-                reference.get('part'),
-                reference.get('subpart')
-            )
-            regulation_xml = _get_regulation_xml(reg_finder, date)
-            regulation_text = ET.tostring(regulation_xml, encoding='unicode')
-            count = _count_regulation_words(regulation_xml)
-
-            query_regulation = f"INSERT INTO {table_regulations} \
-                (agency_id, title, subtitle, chapter, subchapter, \
-                part, subpart, date, text, word_count) \
-                VALUES ({'%s, %s, %s, %s, %s, %s, %s, %s, %s, %s'})"
-            
-            agency_id = agency_id_map.get(agency['slug'])
-            if not agency_id:
-                print(f"Agency ID not found for slug {agency['slug']}")
-                continue
-
-            regulation_data = (
-                agency_id,
-                reg_finder.title,
-                reg_finder.subtitle,
-                reg_finder.chapter,
-                reg_finder.subchapter,
-                reg_finder.part,
-                reg_finder.subpart,
-                date,
-                regulation_text,
-                count
-            )
-
-            try:
-                cursor.execute(query_regulation, regulation_data)
-                conn.commit()
-            except Exception as e:
-                print(f"Error adding regulation data: {e}")
-                raise e
+# Insert regulation data for agency's references into database and return regulations
+# TODO: check for duplicates
+def _get_agency_regulations(conn, cursor, agency, agency_id, date):
+    references = json.loads(agency.get('cfr_references', []))
+    if not references:
+        logger.error(f"No references found for agency {agency['slug']}")
+        return []
     
-    print('Added initial regulations!')
-    return
+    regulations = []
+
+    for reference in references:
+        reg_finder = RegulationFinder(
+            reference.get('title'),
+            reference.get('subtitle'),
+            reference.get('chapter'),
+            reference.get('subchapter'),
+            reference.get('part'),
+            reference.get('subpart')
+        )
+        regulation_xml = _get_regulation_xml(reg_finder, date)
+        #regulation_text = ET.tostring(regulation_xml, encoding='unicode')
+        count = _count_regulation_words(regulation_xml)
+
+        regulations.append({
+            'title': reg_finder.title,
+            'subtitle': reg_finder.subtitle,
+            'chapter': reg_finder.chapter,
+            'subchapter': reg_finder.subchapter,
+            'part': reg_finder.part,
+            'subpart': reg_finder.subpart,
+            'date': date,
+            'word_count': count
+        })
+
+        # TODO: include text
+        query_regulation = f"INSERT INTO {table_regulations} \
+            (agency_id, title, subtitle, chapter, subchapter, \
+            part, subpart, date, word_count) \
+            VALUES ({'%s, %s, %s, %s, %s, %s, %s, %s, %s'})"
+
+        regulation_data = (
+            agency_id,
+            reg_finder.title,
+            reg_finder.subtitle,
+            reg_finder.chapter,
+            reg_finder.subchapter,
+            reg_finder.part,
+            reg_finder.subpart,
+            date,
+            #regulation_text,
+            count
+        )
+
+        try:
+            cursor.execute(query_regulation, regulation_data)
+            conn.commit()
+        except Exception as e:
+            logger.error(f"Error adding regulation data: {e}")
+            raise e
+    
+    return regulations
 
 def _initialize_db(supply_init_data = False):
     try:
@@ -266,6 +283,7 @@ def _initialize_db(supply_init_data = False):
         cursor.execute(query_agencies)
 
         # Create regulations table if it doesn't exist
+        # TODO: include 'text LONGTEXT NOT NULL,'
         query_regulations = f"""CREATE TABLE IF NOT EXISTS {table_regulations} (
             id INT AUTO_INCREMENT PRIMARY KEY,
             agency_id INT NOT NULL,
@@ -276,7 +294,6 @@ def _initialize_db(supply_init_data = False):
             part VARCHAR(255),
             subpart VARCHAR(255),
             date DATE NOT NULL,
-            text LONGTEXT NOT NULL,
             word_count INT NOT NULL
         )"""
         cursor.execute(query_regulations)
@@ -288,15 +305,12 @@ def _initialize_db(supply_init_data = False):
 
             # Only insert data during init if no data present
             if result[0] == 0:
-                agencies, agency_id_map = _get_agencies(conn, cursor)
-
-                date = datetime.datetime.now().strftime('%Y-01-01')
-                _get_regulations(conn, cursor, agencies, agency_id_map, date)
+                _get_agencies(conn, cursor)
 
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"Error initializing database: {e}")
+        logger.error(f"Error initializing database: {e}")
         raise e
 
 # Ensure database is initialized
@@ -329,9 +343,7 @@ def get_agency(agency_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        query = f"SELECT * FROM {table_agencies} WHERE id = %s"
-        cursor.execute(query, (agency_id,))
-        agency = cursor.fetchone()
+        agency = _fetch_agency_by_id(cursor, agency_id)
         conn.close()
 
         if not agency:
@@ -339,6 +351,29 @@ def get_agency(agency_id):
 
         # Return agency
         return jsonify(agency), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/agencies/<int:agency_id>/regulations", methods=["GET"])
+def get_agency_regulations(agency_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        query = f"SELECT * FROM {table_regulations} WHERE agency_id = %s"
+        cursor.execute(query, (agency_id,))
+        regulations = cursor.fetchall()
+
+        if not regulations:
+            logger.info(f"Regulations for agency {agency_id} not found; getting from eCFR...")
+            agency = _fetch_agency_by_id(cursor, agency_id)
+            date = datetime.datetime.now().strftime('%Y-01-01')
+            regulations = _get_agency_regulations(conn, cursor, agency, agency_id, date)
+
+        conn.close()
+
+        # Return agency
+        return jsonify(regulations), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
