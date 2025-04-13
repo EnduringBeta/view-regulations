@@ -37,7 +37,7 @@
   }
 }
 
-.Agencies {
+.Agencies, .Regulations {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
