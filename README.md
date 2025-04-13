@@ -60,6 +60,9 @@ On Windows, run `mysqld` to start the database server and `mysqladmin -u root sh
 
 * Flask's port 5000 is in use could mean Flask is already running. Use `lsof -i :5000` to find processes and
   kill -9 <process#> to stop it.
+* ecfr.gov may block attempts to access resources from new computers. Go to unblock.federalregister.gov to fix this.
+* If debugging Flask, run it alone with `flask --app api/app.py run`
+* If testing database initialization, it may need to be cleared before being set up again
 
 ## Tips
 
