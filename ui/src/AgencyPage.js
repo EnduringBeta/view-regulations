@@ -27,7 +27,6 @@ function RegulationCard({ regulation, parentAgencyId }) {
         <h3>{formatWordCount(regulation.word_count)} words</h3>
         <p>As of {formatDate(regulation.date)}</p>
         <p className="Checksum">{regulation.checksum}</p>
-        <p>{regulation.agency_id}</p>
       </div>
     </div>
   );
