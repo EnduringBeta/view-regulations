@@ -9,14 +9,13 @@ function AgencyCard({ agency, parentAgency }) {
       <div className="Container">
         <h2>{agency.short_name}</h2>
         <p>
-          <Link to={`/agencies/${agency.id}/regulations`}>
+          <Link to={`/agencies/${agency.id}/regulations`} className="App-link">
             {agency.name}
           </Link>
         </p>
         {parentAgency && (
         <h3>Within {parentAgency.short_name}</h3>
         )}
-        <p>{agency.cfr_references}</p>
       </div>
     </div>
   );
