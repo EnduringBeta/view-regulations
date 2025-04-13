@@ -232,9 +232,18 @@ def _count_regulation_words(regulation_xml):
 
     return word_count, checksum
 
+# Track what agency regs are being processed to prevent double calls (and double entries into database)
+regulations_fetching = {}
+
 # Insert regulation data for agency's references into database and return regulations
-# TODOROSS: check for duplicates; prevent double calls
 def _get_agency_regulations(conn, cursor, agency, agency_id, date):
+    fetch_key = f"{agency_id}_{date}" # Use a unique key
+    if fetch_key in regulations_fetching:
+        logger.info(f"Received request for agency {agency_id} date {date} regulations while already ongoing; ignoring")
+        return []
+
+    regulations_fetching[fetch_key] = True
+
     references = json.loads(agency.get('cfr_references', []))
     if not references:
         logger.error(f"No references found for agency {agency['slug']}")
@@ -293,8 +302,10 @@ def _get_agency_regulations(conn, cursor, agency, agency_id, date):
             conn.commit()
         except Exception as e:
             logger.error(f"Error adding regulation data: {e}")
+            regulations_fetching[fetch_key] = False
             raise e
     
+    regulations_fetching[fetch_key] = False
     return regulations
 
 def _initialize_db(supply_init_data = False):
