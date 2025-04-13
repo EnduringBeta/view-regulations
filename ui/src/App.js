@@ -3,23 +3,23 @@ import './App.css';
 
 import React, { useState, useEffect } from "react";
 
-function Card({ animal }) {
+function Card({ agency }) {
   return (
-    <div id="animal-${animal.id}" className="Card">
+    <div id={`agency-${agency.id}`} className="Card">
       <div className="Container">
-        <h2>{animal.name}</h2>
-        <h3>{animal.type}</h3>
+        <h2>{agency.name}</h2>
+        <h3>{agency.type}</h3>
       </div>
     </div>
   );
 }
 
 function App() {
-  const [animals, setAnimals] = useState([]);
+  const [agencies, setAgencies] = useState([]);
 
   useEffect(() => {
-    fetch("/animals").then((res) => res.json()).then((data) => {
-        setAnimals(data);
+    fetch("/agencies").then((res) => res.json()).then((data) => {
+        setAgencies(data);
       });
   }, []);
 
@@ -28,9 +28,9 @@ function App() {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <h1>Web App - Regulations</h1>
-        <div className="Animals">
-          {animals.map((item, index) =>
-            <Card key={index} animal={item} />
+        <div className="Agencies">
+          {agencies.map((item, index) =>
+            <Card key={index} agency={item} />
           )}
         </div>
       </header>
