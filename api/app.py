@@ -154,6 +154,9 @@ def _get_regulation_xml(reg_finder, date):
         if reg_finder.subpart:
             url += f"?subpart={reg_finder.subpart}"
 
+    print(f"Getting regulation text: {reg_finder.title} {reg_finder.subtitle} {reg_finder.chapter} {reg_finder.subchapter} {reg_finder.part} {reg_finder.subpart}")
+
+    # TODOROSS: error about size
     regulation_xml = None
 
     try:
@@ -207,7 +210,8 @@ def _get_regulations(conn, cursor, agencies, agency_id_map, date):
             count = _count_regulation_words(regulation_xml)
 
             query_regulation = f"INSERT INTO {table_regulations} \
-                (agency_id, title, subtitle, chapter, subchapter, part, subpart, date, text, word_count) \
+                (agency_id, title, subtitle, chapter, subchapter, \
+                part, subpart, date, text, word_count) \
                 VALUES ({'%s, %s, %s, %s, %s, %s, %s, %s, %s, %s'})"
             
             agency_id = agency_id_map.get(agency['slug'])
