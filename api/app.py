@@ -14,7 +14,7 @@ MYSQL_DATABASE=os.environ.get('MYSQL_DATABASE', 'mydatabase')
 MYSQL_USER=os.environ.get('MYSQL_USER', 'myuser')
 MYSQL_PASSWORD=os.environ.get('MYSQL_PASSWORD', 'insecure')
 
-table_animals='animals'
+table_agencies='agencies'
 
 db_config = {
     'host': 'localhost',
@@ -30,12 +30,7 @@ def get_db_connection():
     connection = mysql.connector.connect(**db_config)
     return connection
 
-init_animals = [
-    {"name": "Lexi", "type": "hamster"},
-    {"name": "Lorelei", "type": "hamster"},
-    {"name": "Woo", "type": "hamster"},
-    {"name": "Demi", "type": "dog"},
-]
+init_agencies = []
 
 def _initialize_db(supply_init_data = False):
     try:
@@ -47,25 +42,25 @@ def _initialize_db(supply_init_data = False):
         cursor.execute(query_database)
         conn.commit()
 
-        # Create animals table if it doesn't exist
-        query_animals = f"""CREATE TABLE IF NOT EXISTS {table_animals} (
+        # Create agencies table if it doesn't exist
+        query_agencies = f"""CREATE TABLE IF NOT EXISTS {table_agencies} (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             type VARCHAR(255) NOT NULL
         )"""
-        cursor.execute(query_animals)
+        cursor.execute(query_agencies)
 
         if supply_init_data:
-            query_check_empty = f"SELECT COUNT(*) FROM {table_animals}"
+            query_check_empty = f"SELECT COUNT(*) FROM {table_agencies}"
             cursor.execute(query_check_empty)
             result = cursor.fetchone()
 
             # Only insert data during init if no data present
             if result[0] == 0:
-                query_add_animals = f"INSERT INTO {table_animals} (name, type) VALUES (%s, %s)"
-                animals_data = [(animal['name'], animal['type']) for animal in init_animals]
-                cursor.executemany(query_add_animals, animals_data)
-                print('Added initial animals!')
+                query_add_agencies = f"INSERT INTO {table_agencies} (name, type) VALUES (%s, %s)"
+                agencies_data = [(agency['name'], agency['type']) for agency in init_agencies]
+                cursor.executemany(query_add_agencies, agencies_data)
+                print('Added initial agencies!')
 
         conn.commit()
         conn.close()
@@ -79,72 +74,72 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    return 'No animals here... Try "/animals" or port 3000!'
+    return 'No regulation data here... Try "/agencies" or port 3000!'
 
-@app.get("/animals")
-def get_animals():
+@app.get("/agencies")
+def get_agencies():
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        query = f"SELECT * FROM {table_animals}"
+        query = f"SELECT * FROM {table_agencies}"
         cursor.execute(query)
-        animals = cursor.fetchall()
+        agencies = cursor.fetchall()
         conn.close()
 
-        # Return animals
+        # Return agencies
         # Flask doesn’t automatically convert lists to JSON
-        return jsonify(animals)
+        return jsonify(agencies)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/animals/<int:animal_id>", methods=["GET"])
-def get_animal(animal_id):
+@app.route("/agencies/<int:agency_id>", methods=["GET"])
+def get_agency(agency_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        query = f"SELECT * FROM {table_animals} WHERE id = %s"
-        cursor.execute(query, (animal_id,))
-        animal = cursor.fetchone()
+        query = f"SELECT * FROM {table_agencies} WHERE id = %s"
+        cursor.execute(query, (agency_id,))
+        agency = cursor.fetchone()
         conn.close()
 
-        if not animal:
-            return jsonify({"error": "Animal not found"}), 404
+        if not agency:
+            return jsonify({"error": "Agency not found"}), 404
 
-        # Return animal
-        return jsonify(animal), 200
+        # Return agency
+        return jsonify(agency), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.post("/animals")
-def add_animal():
+@app.post("/agencies")
+def add_agency():
     if request.is_json:
-        animal = request.get_json()
+        agency = request.get_json()
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            query = f"INSERT INTO {table_animals} (name, type) VALUES (%s, %s)"
-            animal_data = (animal['name'], animal['type'])
-            cursor.execute(query, animal_data)
+            query = f"INSERT INTO {table_agencies} (name, type) VALUES (%s, %s)"
+            agency_data = (agency['name'], agency['type'])
+            cursor.execute(query, agency_data)
             conn.commit()
             conn.close()
 
-            # Animal added
-            return jsonify({'message': 'Animal added successfully!'}), 201
+            # Agency added
+            return jsonify({'message': 'Agency added successfully!'}), 201
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
     return jsonify({"error": "Request must be JSON"}), 415
 
-@app.route("/animals", methods=["PUT"])
-def update_animal():
+@app.route("/agencies", methods=["PUT"])
+def update_agency():
     if request.is_json:
-        animal = request.get_json()
-        a_id = animal.get('id')
-        a_name = animal.get('name')
-        a_type = animal.get('type')
+        agency = request.get_json()
+        a_id = agency.get('id')
+        a_name = agency.get('name')
+        a_type = agency.get('type')
 
         if not a_id or not a_name or not a_type:
             return jsonify({"error": "Missing fields"}), 400
@@ -152,39 +147,39 @@ def update_animal():
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            query = f"UPDATE {table_animals} SET name = %s, type = %s WHERE id = %s"
-            animal_data = (a_name, a_type, a_id)
-            cursor.execute(query, animal_data)
+            query = f"UPDATE {table_agencies} SET name = %s, type = %s WHERE id = %s"
+            agency_data = (a_name, a_type, a_id)
+            cursor.execute(query, agency_data)
             conn.commit()
             conn.close()
 
             # No data found/changed
             if cursor.rowcount == 0:
-                return jsonify({"error": "Animal not found"}), 404
+                return jsonify({"error": "Agency not found"}), 404
 
-            # Animal updated
-            return jsonify({"message": "Animal updated successfully!"}), 500
+            # Agency updated
+            return jsonify({"message": "Agency updated successfully!"}), 500
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
     return jsonify({"error": "Request must be JSON"}), 415
 
-@app.route("/animals/<int:animal_id>", methods=["DELETE"])
-def delete_animal(animal_id):
+@app.route("/agencies/<int:agency_id>", methods=["DELETE"])
+def delete_agency(agency_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        query = f"DELETE FROM {table_animals} WHERE id = %s"
-        cursor.execute(query, (animal_id,))
+        query = f"DELETE FROM {table_agencies} WHERE id = %s"
+        cursor.execute(query, (agency_id,))
         conn.commit()
         conn.close()
 
         if cursor.rowcount == 0:
-            return jsonify({"error": "Animal not found"}), 404
+            return jsonify({"error": "Agency not found"}), 404
 
-        # Animal removed
-        return jsonify({"message": "Animal deleted successfully!"}), 200
+        # Agency removed
+        return jsonify({"message": "Agency deleted successfully!"}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
