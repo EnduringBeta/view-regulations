@@ -62,6 +62,25 @@ def _fetch_agency_by_id(cursor, agency_id):
     cursor.execute(query, (agency_id,))
     return cursor.fetchone()
 
+def _fetch_child_agencies(cursor, parent_id):
+    query = f"SELECT * FROM {table_agencies} WHERE parent_id = %s"
+    cursor.execute(query, (parent_id,))
+    return cursor.fetchall()
+
+def _get_or_fetch_regulations(conn, cursor, agency_id, date_year):
+    query = f"SELECT * FROM {table_regulations} WHERE agency_id = %s AND YEAR(date) = %s"
+    cursor.execute(query, (agency_id, date_year))
+    regulations = cursor.fetchall()
+
+    if not regulations:
+        logger.info(f"Regulations for agency {agency_id} year {date_year} not found; getting from eCFR...")
+        agency = _fetch_agency_by_id(cursor, agency_id)
+        date = datetime.datetime(date_year, 1, 19, 12, 0, 0, tzinfo=datetime.timezone.utc).strftime('%Y-%m-%d')
+
+        regulations = _get_agency_regulations(conn, cursor, agency, agency_id, date)
+    
+    return regulations
+
 # Insert agencies into database and return agencies and ID map
 # Feels a bit clunky to return a tuple when the data could be combined
 def _get_agencies(conn, cursor):
@@ -182,7 +201,7 @@ def _get_regulation_xml(reg_finder, date):
     
     return regulation_xml
 
-def calculate_checksum(text):
+def _calculate_checksum(text):
     if not isinstance(text, str):
         raise ValueError("Input must be a string")
 
@@ -205,7 +224,7 @@ def _count_regulation_words(regulation_xml):
                 word_count += len(full_text.split())
         
         # Checksum is based on full XML, while word count removes non-text elements
-        checksum = calculate_checksum(ET.tostring(regulation_xml, encoding='unicode'))
+        checksum = _calculate_checksum(ET.tostring(regulation_xml, encoding='unicode'))
     except Exception as e:
         logger.error(f"Error counting words in regulation text: {e}")
         raise e
@@ -379,24 +398,22 @@ def get_agency(agency_id):
 def get_agency_regulations(agency_id, year = None):
     currentYear = datetime.datetime.now().year
     if year and year >= 2015 and year <= currentYear:
-        dateYear = year
+        date_year = year
     else:
-        dateYear = currentYear
+        date_year = currentYear
+    
+    # Check for the optional "all" query parameter (?all=true)
+    fetch_child_agency_regs = request.args.get("all", "false").lower() == "true"
     
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        query = f"SELECT * FROM {table_regulations} WHERE agency_id = %s AND YEAR(date) = %s"
-        cursor.execute(query, (agency_id, dateYear))
-        regulations = cursor.fetchall()
+        regulations = _get_or_fetch_regulations(conn, cursor, agency_id, date_year)
 
-        # TODOROSS: fix duplicate data glitch?
-        if not regulations:
-            logger.info(f"Regulations for agency {agency_id} year {dateYear} not found; getting from eCFR...")
-            agency = _fetch_agency_by_id(cursor, agency_id)
-            date = datetime.datetime(dateYear, 1, 19, 12, 0, 0, tzinfo=datetime.timezone.utc).strftime('%Y-%m-%d')
-
-            regulations = _get_agency_regulations(conn, cursor, agency, agency_id, date)
+        if fetch_child_agency_regs:
+            child_agencies = _fetch_child_agencies(cursor, agency_id)
+            for child_agency in child_agencies:
+                regulations.append(_get_or_fetch_regulations(conn, cursor, child_agency['id'], date_year))
 
         conn.close()
 
