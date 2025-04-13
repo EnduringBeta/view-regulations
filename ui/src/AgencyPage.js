@@ -5,6 +5,7 @@ import './App.css';
 
 const startYear = 2015;
 const loadingText = "Loading...";
+const noDataText = "No data";
 
 function RegulationCard({ regulation }) {
   const referencePieces = [
@@ -68,28 +69,41 @@ function AgencyPage() {
   useEffect(() => {
     fetch(`/agencies/${agencyId}`).then((res) => res.json()).then((data) => {
       setAgency(data);
+    })
+    .catch((error) => {
+      console.error("Error fetching agencies:", error);
     });
   }, [agencyId]);
 
   useEffect(() => {
     setRegulations([]); // Reset regulations when year changes
     fetch(`/agencies/${agencyId}/regulations/${year}`).then((res) => res.json()).then((data) => {
-      setRegulations(data);
+      if (Array.isArray(data)) {
+        setRegulations(data);
+      } else {
+        // 404 error returns an object
+        setRegulations(null);
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching regulations:", error);
     });
   }, [agencyId, year]);
 
   // Calculate total word count
-  const totalWordCount = regulations.reduce((total, regulation) => {
-    return total + (regulation.word_count || 0);
-  }, 0);
+  const totalWordCount = !regulations ? -1 : regulations.length === 0
+    ? 0
+    : regulations.reduce((total, regulation) => {
+      return total + (regulation.word_count || 0);
+    }, 0);
 
   return (
     <div id={`agency-regulations-${agency.slug}`}>
       <h1>{agency.short_name}</h1>
-      <h2>Total words: {totalWordCount === 0 ? loadingText : formatWordCount(totalWordCount)}</h2>
+      <h2>Total words: {totalWordCount === -1 ? noDataText : totalWordCount === 0 ? loadingText : formatWordCount(totalWordCount)}</h2>
       <YearSelector year={year} currentYear={currentYear} setYear={setYear}></YearSelector>
       <div className="Regulations">
-        {regulations.map((item, index) => {
+        {!regulations ? null : regulations.map((item, index) => {
           return (
             <RegulationCard key={index} regulation={item} />
           );

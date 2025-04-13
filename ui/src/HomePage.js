@@ -26,8 +26,11 @@ function HomePage() {
 
   useEffect(() => {
     fetch("/agencies").then((res) => res.json()).then((data) => {
-        setAgencies(data);
-      });
+      setAgencies(data);
+    })
+    .catch((error) => {
+      console.error("Error fetching agencies:", error);
+    });
   }, []);
 
   return (
