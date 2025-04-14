@@ -21,12 +21,9 @@ mysql -u root -p$MYSQL_PASSWORD < init.sql
 # Activate Python virtual environment, which is assumed to have been set up parallel to repo
 . myenv/bin/activate
 
-# .env environment variables are set in Python using `load_dotenv`
-
 # Run the API (in background with "&")!
 # Use host arg for all addresses
 flask --app api/app.py run --host=0.0.0.0 &
-#flask --app api/app.py run --host=0.0.0.0 --port=5000 &
 #python3 app.py
 
 echo "Pausing for any API messages..."
