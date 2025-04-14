@@ -25,13 +25,9 @@ function HomePage() {
   const [agencies, setAgencies] = useState([]);
 
   useEffect(() => {
-    fetch("/agencies").then((res) => {
-      console.log("Response:", res);
-      res.json();
-    }).then((data) => {
-      console.log("Data:", data);
+    fetch("/agencies").then((res) => res.json()).then((data) => {
       if (!data) {
-        console.error("No data received");
+        console.error("No agency data received");
         return;
       }
       setAgencies(data);
