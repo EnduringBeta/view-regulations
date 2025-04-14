@@ -29,6 +29,11 @@ function HomePage() {
       console.log("Response:", res);
       res.json();
     }).then((data) => {
+      console.log("Data:", data);
+      if (!data) {
+        console.error("No data received");
+        return;
+      }
       setAgencies(data);
     })
     .catch((error) => {
