@@ -25,7 +25,10 @@ function HomePage() {
   const [agencies, setAgencies] = useState([]);
 
   useEffect(() => {
-    fetch("/agencies").then((res) => res.json()).then((data) => {
+    fetch("/agencies").then((res) => {
+      console.log("Response:", res);
+      res.json();
+    }).then((data) => {
       setAgencies(data);
     })
     .catch((error) => {
