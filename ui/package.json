@@ -37,6 +37,5 @@
       "last 1 safari version"
     ]
   },
-  "allowedHosts": ["localhost"],
   "proxy": "http://localhost:5000"
 }
