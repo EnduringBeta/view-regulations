@@ -49,6 +49,10 @@ These can also be run together via `redocker.sh`
 * Install MySQL (`brew install mysql`)
 * Run `./run-app.sh`, which starts the server API (`python3 app.py` and `flask run` also work).
 
+Environment variables may break things; running locally is untested.
+
+On Windows, run `mysqld` to start the database server and `mysqladmin -u root shutdown` to stop it.
+
 ### Server Setup
 
 * Copy SSH keys
@@ -59,9 +63,7 @@ These can also be run together via `redocker.sh`
 * Start MySQL service and setup to run on boot(`sudo systemctl start mysql; sudo systemctl enable mysql`)
 * Set up `run-app-local.sh` to run on boot, or just run?
 
-Environment variables may break things; running locally is untested.
-
-On Windows, run `mysqld` to start the database server and `mysqladmin -u root shutdown` to stop it.
+https://create-react-app.dev/docs/proxying-api-requests-in-development/#configuring-the-proxy-manually
 
 ## Troubleshooting
 
