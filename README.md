@@ -75,6 +75,7 @@ https://create-react-app.dev/docs/proxying-api-requests-in-development/#configur
 * ecfr.gov may block attempts to access resources from new computers. Go to unblock.federalregister.gov to fix this.
 * If debugging Flask, run it alone with `flask --app api/app.py run`
 * If testing database initialization, it may need to be cleared before being set up again
+* Running locally and viewing a droplet maybe can cause port conflicts?
 
 ## Tips
 
