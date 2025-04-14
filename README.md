@@ -63,6 +63,26 @@ On Windows, run `mysqld` to start the database server and `mysqladmin -u root sh
 * Start MySQL service and setup to run on boot(`sudo systemctl start mysql; sudo systemctl enable mysql`)
 * Set up `run-app-local.sh` to run on boot, or just run?
 
+#### Service file example
+
+```
+/etc/systemd/system/myapp.service
+[Unit]
+Description=View Regulations Startup Service
+After=network.target mysql.service
+Requires=mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/view-regulations
+ExecStart=/root/view-regulations/run-app-local.sh nopw
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
 https://create-react-app.dev/docs/proxying-api-requests-in-development/#configuring-the-proxy-manually
 
 ## Troubleshooting
